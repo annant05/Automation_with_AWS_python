@@ -4,14 +4,15 @@ import os
 import sys
 import time
 
-instance_id = "i-0d212a70a060e0ba7"
+instance_id = ""
 public_ip_add_string = "PublicIpAddress"
 port = "3389"
-user = str(raw_input("enter username: ")).lstrip().rstrip().strip(" ") or ""
-password = str(raw_input("enter password: ")).lstrip().rstrip().strip(" ") or ""
+user = ""
+password = ""
 response = ""
 instance_data = ""
 state = ""
+volume_id = "vol-"
 
 
 def write_response_in_file():
@@ -42,6 +43,7 @@ def start_rdp():
 
 def start_instance():
     global instance_id
+    print("Instance id in start_instance is : " + instance_id)
     cmd_start_instance = "aws ec2 start-instances --instance-ids " + instance_id
     current_state = subprocess.check_output(cmd_start_instance, stderr=subprocess.STDOUT)
     print(current_state)
@@ -66,7 +68,8 @@ def check_state():
             print("BYE :)")
             exit(0)
     else:
-        start_rdp()
+        # start_rdp()
+        print ("instance started" + instance_id)
 
 
 def get_instance_state():
@@ -81,4 +84,27 @@ def get_instance_state():
     state = str((instance_data['State'])['Name'])
 
 
-check_state()
+def detach_attach_volume(instance_to_attach):
+    global volume_id
+    cmd_detach_volume = "aws ec2 detach-volume --volume-id " + volume_id
+    print(str(subprocess.check_output(cmd_detach_volume, stderr=subprocess.STDOUT)).replace("\\r\\n", '').strip(
+        'b\''))
+    cmd_attach_volume = "aws ec2 attach-volume --volume-id " + volume_id + " --device /dev/sda1 --instance " + instance_to_attach
+    print (str(subprocess.check_output(cmd_attach_volume, stderr=subprocess.STDOUT)).replace("\\r\\n", '').strip(
+        'b\''))
+
+
+def select_instance():
+    ch = int(raw_input(" 1: t2.small  and  2: t2.medium    :"))
+    global instance_id
+    if ch == 1:
+        instance_id = "i-"
+        detach_attach_volume(instance_id)  # instance id for t2.small
+    elif ch == 2:
+        instance_id = "i-"    # instance id for t2.medium
+        detach_attach_volume(instance_id)
+    print("Initial Instance id : " + instance_id)
+    check_state()
+
+
+select_instance()
