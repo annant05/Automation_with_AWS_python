@@ -4,6 +4,11 @@ import os
 import sys
 import time
 
+instance = {
+    "t2.small": "i-",
+    "t2.medium": "i-"
+}
+
 instance_id = ""
 public_ip_add_string = "PublicIpAddress"
 port = "3389"
@@ -60,6 +65,7 @@ def check_state():
     elif state == "stopped":
         choice = raw_input("Enter \"YES\" to start the instance:  ")
         if choice == "YES":
+            detach_attach_volume(instance_id)
             start_instance()
             print('Please! wait for ' + str(wait) + 'seconds')
             time.sleep(wait)
@@ -68,7 +74,7 @@ def check_state():
             print("BYE :)")
             exit(0)
     else:
-        # start_rdp()
+        start_rdp()
         print ("instance started" + instance_id)
 
 
@@ -98,11 +104,9 @@ def select_instance():
     ch = int(raw_input(" 1: t2.small  and  2: t2.medium    :"))
     global instance_id
     if ch == 1:
-        instance_id = "i-"
-        detach_attach_volume(instance_id)  # instance id for t2.small
+        instance_id = instance["t2.small"]  # instance id for t2.small
     elif ch == 2:
-        instance_id = "i-"    # instance id for t2.medium
-        detach_attach_volume(instance_id)
+        instance_id = instance["t2.medium"]  # instance id for t2.medium
     print("Initial Instance id : " + instance_id)
     check_state()
 
