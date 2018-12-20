@@ -14,8 +14,8 @@ instance = {
 # Dictionary of volumes with their attachment_type : For ex: /dev/sda1
 volumes = {
     "main_boot_vol": ["vol-0bf263386c4415c6f", "/dev/sda1"],
-    "additional_storage_vol": ["vol-05a99df42b26e6b83", "/dev/sda1"],
-    "temp_5gb_vol": ["vol-02a6bf5074d93f6f1", "xvdf"]
+    "additional_storage_vol": ["vol-05a99df42b26e6b83", "/dev/sda2"]
+    # "temp_5gb_vol": ["vol-02a6bf5074d93f6f1", "xvdf"]
 }
 
 # enter the username and password used to login into the instance using RDP.
@@ -112,7 +112,8 @@ def get_instance_state():
     global state
     cmd_describe_ec2 = "aws ec2 describe-instances --instance-ids " + instance_id
     try:
-        response = str(subprocess.check_output(cmd_describe_ec2, stderr=subprocess.STDOUT))
+        response = str(subprocess.check_output(cmd_describe_ec2, stderr=subprocess.STDOUT)).replace("\\r\\n", '').strip(
+            'b\'')
         obj_json = json.loads(response)
         instance_data = ((obj_json['Reservations'][0])['Instances'][0])
         state = str((instance_data['State'])['Name'])
@@ -161,7 +162,8 @@ def detach_attach_volume(instance_to_attach):
 
     for vol in volumes.keys():
         try:
-            print(str(subprocess.check_output(cmd_detach_volume + volumes[vol][0], stderr=subprocess.STDOUT)))
+            print(str(subprocess.check_output(cmd_detach_volume + volumes[vol][0], stderr=subprocess.STDOUT))
+                  .replace("\\r\\n", '').strip('b\''))
         except subprocess.CalledProcessError as e:
             print("Already attached: ", e.output)
 
@@ -169,7 +171,8 @@ def detach_attach_volume(instance_to_attach):
         try:
             cmd_attach_volume = "aws ec2 attach-volume --volume-id " + volumes[vol][0] + " --device " + volumes[vol][
                 1] + " --instance " + instance_to_attach
-            print(str(subprocess.check_output(cmd_attach_volume, stderr=subprocess.STDOUT)))
+            print(str(subprocess.check_output(cmd_attach_volume, stderr=subprocess.STDOUT))
+                  .replace("\\r\\n", '').strip('b\''))
         except subprocess.CalledProcessError as e:
             print("Error attaching volume: ", e.output)
 
