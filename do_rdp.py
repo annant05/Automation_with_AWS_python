@@ -4,6 +4,7 @@ import boto3
 import json
 import time
 import sys
+import subprocess
 
 instance_id = ""
 RDP_USERNAME = ""
@@ -73,9 +74,16 @@ def start_rdp(instance_id):
 
         cmd_cmdkey = f'cmdkey /add: {SERVER_IP} /user: {RDP_USERNAME} /pass: {RDP_PASSWORD}'
         cmd_mstsc = f'mstsc /v:{SERVER_IP}:{PORT} /f'
-        print(cmd_cmdkey)
-        print(cmd_mstsc)
-
+        try:
+            print(cmd_cmdkey)
+            subprocess.Popen(cmd_cmdkey)
+            print(cmd_mstsc)
+            subprocess.Popen(cmd_mstsc)
+            sys.exit(0)
+        except subprocess.CalledProcessError as e:
+            print("Error: ", e.output)
+        
+        time.sleep(3)
         exit_prog()
 
     if(choice_rdp == "no"):
