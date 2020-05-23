@@ -2,12 +2,14 @@
 
 import boto3
 import json
-import time 
-import sys 
+import time
+import sys
 
-instance_id = "i-031bc1e674943a27d"
-rdp_username = ""
-rdp_password = ""
+instance_id = ""
+RDP_USERNAME = ""
+RDP_PASSWORD = ""
+
+STR_PUBLIC_IP = "PublicIpAddress"
 
 AWS_credentials = {
     "AWS_ACCESS_KEY": "",
@@ -24,43 +26,67 @@ session = boto3.Session(
 aws_ec2_client = session.client('ec2')
 
 
+def get_instance_state(instance_id, get_ip=False):
 
-def get_instance_state(instance_id,get_ip=False):
-
-    response = aws_ec2_client.describe_instances(
-        InstanceIds=[instance_id]
-    )
+    response = aws_ec2_client.describe_instances(InstanceIds=[instance_id])
     instance_meta = response["Reservations"][0]["Instances"][0]
-    
+
     if(get_ip):
-        if("PublicIpAddress")
+        if(STR_PUBLIC_IP) in instance_meta:
+            return (instance_meta[STR_PUBLIC_IP])
+        else:
+            return None
     else:
         return (instance_meta["State"]["Name"]).lower()
 
 
 def start_instance(instance_id):
-    choice_start = (input("Do you want to START the server YES/NO : ")).lower()
+    choice_start = (
+        input("-> START <- the server YES/NO (default - NO): ")).lower()
+
     if(choice_start == "yes"):
-        aws_ec2_client.start_instance(
-            InstanceIds=[instance_id]
-        )
-    if(choice_start == "no"):
-        choice_exit = (input("Do you want to EXIT the program : YES/NO : ")).lower()
-        if(choice_exit == "yes"):
-            exit(0)
+        aws_ec2_client.start_instances(InstanceIds=[instance_id])
+
+    if(choice_start == "" or choice_start == "no"):
+        exit_prog()
+
+    return
+
+
+def exit_prog():
+    choice_exit = (
+        input("-> EXIT <- the program : YES/NO (default - YES): ")).lower()
+
+    if(choice_exit == "" or choice_exit == "yes"):
+        exit(0)
+
 
 def start_rdp(instance_id):
-    choice_rdp = (input("Do you want to RDP into server YES/NO : ")).lower()
-    if(choice_rdp == "yes" or ""):
+    choice_rdp = (
+        input("-> RDP <- into server YES/NO (default - YES): ")).lower()
 
-        cmd_cmdkey = f'cmdkey /add: {server_ip} /user: {rdp_username} /pass: {rdp_password}'
+    if(choice_rdp == "" or choice_rdp == "yes"):
+        print("doing_rdp")
 
-        cmd_mstsc = f'mstsc /v:server_ip:port /f'
-   
+        SERVER_IP = get_instance_state(instance_id, get_ip=True)
+        PORT = 3389
+
+        cmd_cmdkey = f'cmdkey /add: {SERVER_IP} /user: {RDP_USERNAME} /pass: {RDP_PASSWORD}'
+        cmd_mstsc = f'mstsc /v:{SERVER_IP}:{PORT} /f'
+        print(cmd_cmdkey)
+        print(cmd_mstsc)
+
+        exit_prog()
+
     if(choice_rdp == "no"):
-        choice_exit = (input("Do you want to EXIT the program : YES/NO : ")).lower()
-        if(choice_exit == "yes"):
-            exit(0)
+        choice_stop = (input("-> STOP <- the server YES/NO (default - NO): ")).lower()
+
+        if(choice_stop == "yes"):
+            aws_ec2_client.stop_instances(InstanceIds=[instance_id])
+            print("We are stopping your server")
+
+        exit_prog()
+
     return
 
 
@@ -69,13 +95,24 @@ def state_change(instance_id):
 
     if(state == "stopped"):
         start_instance(instance_id)
+
     elif(state == "running"):
         start_rdp(instance_id)
+
     elif(state == "pending"):
-        print("Please wait for some time")
+        wait = 20
+        print("Please wait for some time for server to start")
+        time.sleep(wait)
         state_change(instance_id)
+
+    elif(state == "stopping"):
+        print("The instance is stopping at this moment")
+
+    else:
+        print("The instance is in some other state")
 
 
 while(1):
     state_change(instance_id)
 
+# print(get_instance_state(instance_id,get_ip=True))
